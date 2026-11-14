@@ -1,44 +1,51 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { acme, demoUser, emptyDashboard, mockApi, page, renderWithProviders } from "@/test/utils";
 
 import { App } from "./App";
 
-function renderAt(path: string) {
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
-  );
-}
-
 describe("App shell", () => {
-  it("redirects / to the dashboard", () => {
-    renderAt("/");
-    expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
+  beforeEach(() => {
+    mockApi({
+      "GET /api/v1/me": () => demoUser,
+      "GET /api/v1/dashboard/summary": () => emptyDashboard,
+      "GET /api/v1/clients": () => page([acme]),
+      "GET /api/v1/invoices": () => page([]),
+    });
   });
 
-  it("shows the main navigation", () => {
-    renderAt("/dashboard");
-    const nav = screen.getByRole("navigation", { name: "Main" });
-    expect(nav).toHaveTextContent("Dashboard");
-    expect(nav).toHaveTextContent("Clients");
-    expect(nav).toHaveTextContent("Invoices");
+  it("redirects / to the dashboard and shows onboarding", async () => {
+    renderWithProviders(<App />, { route: "/" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
+    expect(await screen.findByText("Welcome to InvoiceFlow")).toBeInTheDocument();
+    expect(await screen.findByText("Demo Studio")).toBeInTheDocument();
   });
 
-  it("navigates between sections", async () => {
+  it("navigates to clients and lists them", async () => {
     const user = userEvent.setup();
-    renderAt("/dashboard");
+    renderWithProviders(<App />, { route: "/dashboard" });
 
     await user.click(screen.getByRole("link", { name: "Clients" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "Clients" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Clients" })).toHaveAttribute("aria-current", "page");
+    expect(await screen.findByRole("heading", { level: 1, name: "Clients" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Acme Corp" })).toHaveAttribute(
+      "href",
+      "/clients/7",
+    );
+  });
+
+  it("shows an empty invoice list", async () => {
+    renderWithProviders(<App />, { route: "/invoices" });
+
+    expect(await screen.findByText("No invoices yet")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "All" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("shows a not-found page for unknown routes", () => {
-    renderAt("/nope");
+    renderWithProviders(<App />, { route: "/nope" });
     expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
   });
 });

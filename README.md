@@ -5,6 +5,13 @@
 The MVP is built one module at a time following [`PRPs/invoiceflow-mvp-plan.md`](PRPs/invoiceflow-mvp-plan.md).
 The long-term SaaS specification is [`PRPs/invoiceflow-prp.md`](PRPs/invoiceflow-prp.md).
 
+> **Local demo mode:** there is no login. Every request acts as a seeded demo user
+> ("Demo Studio", user id 1), while all data stays scoped by `user_id` for future multi-user
+> support. Run it on your own machine only — the API refuses to start with `ENV=production`.
+
+**Workflow:** open http://localhost:5173 → add a client → create an invoice (live totals) →
+preview it → download the PDF. Mark it sent / paid / void from the invoice page.
+
 ## Prerequisites
 
 - Docker Desktop (runs PostgreSQL 16)

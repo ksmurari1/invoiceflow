@@ -1,6 +1,7 @@
 import { FileText, LayoutDashboard, type LucideIcon, Users } from "lucide-react";
 import { NavLink } from "react-router";
 
+import { useMe } from "@/hooks/useMe";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -16,8 +17,9 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function Sidebar() {
+  const { data: me } = useMe();
   return (
-    <aside className="border-b bg-sidebar text-sidebar-foreground md:w-60 md:shrink-0 md:border-r md:border-b-0">
+    <aside className="flex flex-col border-b bg-sidebar text-sidebar-foreground md:w-60 md:shrink-0 md:border-r md:border-b-0">
       <div className="flex h-14 items-center px-4 text-lg font-semibold tracking-tight">
         InvoiceFlow
       </div>
@@ -38,6 +40,12 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+      <div className="mt-auto hidden px-4 py-4 text-xs text-muted-foreground md:block">
+        <p className="font-medium text-sidebar-foreground">
+          {me?.businessName ?? me?.fullName ?? "…"}
+        </p>
+        <p>Local demo mode</p>
+      </div>
     </aside>
   );
 }

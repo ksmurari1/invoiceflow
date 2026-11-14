@@ -112,6 +112,41 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   return data as T;
 }
 
+/** Parse `filename="..."` from a Content-Disposition header. */
+export function filenameFromDisposition(header: string | null): string | null {
+  if (!header) {
+    return null;
+  }
+  const match = /filename="?([^";]+)"?/i.exec(header);
+  return match?.[1] ?? null;
+}
+
+/** Download a binary response (e.g. a PDF). Throws ApiError like apiRequest. */
+export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string | null }> {
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, { headers });
+  } catch {
+    throw new ApiError(0, "network_error", "Could not reach the server. Is the API running?");
+  }
+  if (!response.ok) {
+    const data = await readJson(response);
+    if (isApiErrorBody(data)) {
+      throw new ApiError(response.status, data.error.code, data.error.message, data.error.fields);
+    }
+    throw new ApiError(response.status, "http_error", `Download failed (${response.status}).`);
+  }
+  return {
+    blob: await response.blob(),
+    filename: filenameFromDisposition(response.headers.get("Content-Disposition")),
+  };
+}
+
 export const api = {
   get: <T>(path: string, signal?: AbortSignal) => apiRequest<T>(path, { signal }),
   post: <T>(path: string, body?: unknown) => apiRequest<T>(path, { method: "POST", body }),
