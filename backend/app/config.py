@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, ge=1, le=1440)
     FRONTEND_URL: str = "http://localhost:5173"
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    # Local MVP: no login. Every request acts as this seeded demo user (see app/auth).
+    DEMO_USER_ID: int = Field(default=1, ge=1)
 
 
 @lru_cache

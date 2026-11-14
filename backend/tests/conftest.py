@@ -7,7 +7,7 @@ Test harness.
 - Each test runs inside a transaction that is rolled back, so tests never see each other's data.
 """
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from pathlib import Path
 
 import pytest
@@ -17,9 +17,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_user
 from app.config import get_settings
 from app.database import get_db
 from app.main import app
+from app.models.user import User
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
@@ -68,7 +70,7 @@ def db_session(engine: Engine) -> Generator[Session, None, None]:
 
 @pytest.fixture
 def client(db_session: Session) -> Generator[TestClient, None, None]:
-    """HTTP client for the app, wired to the per-test database session."""
+    """HTTP client for the app, wired to the per-test database session (acts as the demo user)."""
 
     def override_get_db() -> Generator[Session, None, None]:
         yield db_session
@@ -79,3 +81,24 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
             yield test_client
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def demo_user(db_session: Session) -> User:
+    """The seeded demo user that every request acts as."""
+    user = db_session.get(User, get_settings().DEMO_USER_ID)
+    assert user is not None, "demo user missing: migrations did not seed it"
+    return user
+
+
+@pytest.fixture
+def act_as(client: TestClient) -> Callable[[User], None]:
+    """Switch the acting user for subsequent requests (simulates another tenant)."""
+
+    def switch(user: User) -> None:
+        async def current_user() -> User:
+            return user
+
+        app.dependency_overrides[get_current_user] = current_user
+
+    return switch
