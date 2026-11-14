@@ -1,3 +1,53 @@
+# InvoiceFlow
+
+> Lets freelancers create, send, and track invoices in under a minute.
+
+The MVP is built one module at a time following [`PRPs/invoiceflow-mvp-plan.md`](PRPs/invoiceflow-mvp-plan.md).
+The long-term SaaS specification is [`PRPs/invoiceflow-prp.md`](PRPs/invoiceflow-prp.md).
+
+## Prerequisites
+
+- Docker Desktop (runs PostgreSQL 16)
+- Python 3.11+
+- Node.js 24 LTS + npm
+
+## Setup
+
+```bash
+# 1. Database (creates `invoiceflow` and `invoiceflow_test`)
+docker compose up -d
+
+# 2. Backend
+cd backend
+python -m venv .venv
+.venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
+pip install -r requirements-dev.txt
+copy ..\.env.example .env         # macOS/Linux: cp ../.env.example .env
+#    then set SECRET_KEY in backend/.env:
+#    python -c "import secrets; print(secrets.token_urlsafe(48))"
+alembic upgrade head
+uvicorn app.main:app --reload     # http://localhost:8000/health, /docs
+
+# 3. Frontend (new terminal)
+cd frontend
+npm install
+copy .env.example .env            # macOS/Linux: cp .env.example .env
+npm run dev                       # http://localhost:5173
+```
+
+## Checks
+
+```bash
+# Backend (from backend/, venv active)
+ruff check . && ruff format --check . && mypy
+pytest --cov=app                  # uses TEST_DATABASE_URL, never the dev database
+
+# Frontend (from frontend/)
+npm run lint && npm run type-check && npm test && npm run build
+```
+
+---
+
 # MicroSaaS Template
 
 > **Clone. Define. Build.** Full-stack SaaS in minutes.
