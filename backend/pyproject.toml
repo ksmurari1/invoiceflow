@@ -1,0 +1,50 @@
+[project]
+name = "invoiceflow-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+# T20 bans print(); S = bandit security checks.
+select = ["E", "F", "W", "I", "N", "B", "UP", "S", "SIM", "T20", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+# AppError handlers narrow the exception type with assert for the type checker.
+"app/errors.py" = ["S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+# backend/alembic/ (migrations folder) must not be mistaken for a first-party package.
+known-third-party = ["alembic"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI dependency declarations are evaluated per request, not at definition time.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["app"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

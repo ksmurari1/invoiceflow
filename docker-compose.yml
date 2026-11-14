@@ -1,0 +1,24 @@
+# InvoiceFlow local development services.
+# MVP: only PostgreSQL runs in Docker; backend and frontend run locally.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: invoiceflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-invoiceflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-invoiceflow}
+      POSTGRES_DB: ${POSTGRES_DB:-invoiceflow}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - invoiceflow_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  invoiceflow_pgdata:

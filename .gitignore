@@ -7,3 +7,19 @@ node_modules/
 dist/
 build/
 .pytest_cache/
+
+# Python tooling
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Frontend tooling
+coverage/
+*.tsbuildinfo
+
+# OS / editor
+.DS_Store
+Thumbs.db
